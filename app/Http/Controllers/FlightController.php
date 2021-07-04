@@ -94,14 +94,14 @@ class FlightController extends Controller
                         }
                     }
                     $arrayGrupos[$uniqueId]['uniqueId'] = $uniqueId;
-                    $arrayGrupos[$uniqueId]['totalPrice'] = (int)($valorTotal + $volta);
+                    $arrayGrupos[$uniqueId]['totalPrice'] = ($valorTotal + $volta);
                     $arrayGrupos[$uniqueId]['outbound'] = $grupoIdaArray;
                     $arrayGrupos[$uniqueId]['inbound'] = $grupoVoltaArray;
 
-                    $precoTotais[] = (int)($valorTotal + $volta);
-                    if(min($precoTotais) == (int)($valorTotal + $volta)){
+                    $precoTotais[] = $valorTotal + $volta;
+                    if(min($precoTotais) == $valorTotal + $volta){
                         $uniqueIdMenor = $uniqueId;
-                        $menorPreco = (int)($valorTotal + $volta);
+                        $menorPreco = $valorTotal + $volta;
                     }
                     
                     $uniqueId++;
@@ -110,14 +110,48 @@ class FlightController extends Controller
             }
         }
 
+        $arrayGruposSort = array();
+        $arrayGruposFinal = array();
+        $arrayAux = array();
+
+        foreach ($arrayGrupos as $preco){
+            $arrayGruposSort[] = $preco['totalPrice'];
+        }
+        
+        sort($arrayGruposSort);
+        $uniqueId = 0;
+        
+        foreach($arrayGruposSort as $aux){
+            $numero = 0;
+            foreach($arrayGrupos as $aux2){
+                
+                if($aux2['totalPrice'] == $aux && !in_array($aux2['uniqueId'], $arrayAux)){
+                    $arrayAux[] = $aux2['uniqueId'];
+                    $arrayGruposFinal[$uniqueId]['uniqueId'] = $uniqueId;
+                    $arrayGruposFinal[$uniqueId]['totalPrice'] = $aux2['totalPrice'];
+                    $arrayGruposFinal[$uniqueId]['outbound'] = $aux2['outbound'];
+                    $arrayGruposFinal[$uniqueId]['inbound'] = $aux2['inbound'];
+                }else{
+                    if($aux2['totalPrice'] == $aux && $numero == 1){
+                        $arrayGruposFinal[$uniqueId]['uniqueId'] = $uniqueId;
+                        $arrayGruposFinal[$uniqueId]['totalPrice'] = $aux2['totalPrice'];
+                        $arrayGruposFinal[$uniqueId]['outbound'] = $aux2['outbound'];
+                        $arrayGruposFinal[$uniqueId]['inbound'] = $aux2['inbound'];
+                    }else if($aux2['totalPrice'] == $aux){
+                        $numero++;
+                    }
+                }
+            }
+            $uniqueId++;
+        }
+ 
         $resultadoFinal = array();
         $resultadoFinal['flights'] = $resultado;
-        $resultadoFinal['groups'] = $arrayGrupos;
+        $resultadoFinal['groups'] = $arrayGruposFinal;
         $resultadoFinal['totalGroups'] = count($arrayGrupos);
-        $resultadoFinal['totalFlights'] = count($arrayGrupos);
+        $resultadoFinal['totalFlights'] = count($resultado);
         $resultadoFinal['cheapestPrice'] = $menorPreco;
         $resultadoFinal['cheapestGroup'] = $uniqueIdMenor;
-        
         
         echo json_encode($resultadoFinal);
         
